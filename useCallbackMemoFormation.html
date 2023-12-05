@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>React Hooks: useMemo and useCallback</title>
+    <meta charset="utf-8" />
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body {
+        font-family: "Droid Serif";
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: "Yanone Kaffeesatz";
+        font-weight: normal;
+      }
+      .remark-code,
+      .remark-inline-code {
+        font-family: "Ubuntu Mono";
+      }
+      blockquote::before {
+        content: open-quote;
+        margin-right: 5px;
+        font-size: 1.2em;
+      }
+
+      blockquote {
+        border-left: 0.3em solid #ccc;
+        padding: 0 15px;
+        font-style: italic;
+        color: #ccc;
+        quotes: "\201C""\201D""\2018""\2019";
+      }
+
+      blockquote::after {
+        content: close-quote;
+        margin-left: 5px;
+        font-size: 1.2em;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- built with: https://github.com/gnab/remark/wiki -->
+    <textarea id="source">
+
+class: center, middle
+
+# React Hooks: useMemo and useCallback
+---
+
+
+
+## Understanding useMemo
+- Memoizes the result of a function.
+
+--
+
+- Reduces unnecessary computations.
+
+--
+
+- Use cases: Expensive calculations, referential equality.
+---
+
+## Correct Usage of useMemo
+### Example 1: Heavy Computations
+```jsx
+import { useMemo } from 'react';
+
+function TodoList({ todos, tab }) {
+  const visibleTodos = useMemo(
+    () => filterTodos(todos, tab),
+    [todos, tab]
+  );
+  // ...
+}
+```
+---
+
+## Correct Usage of useMemo
+### Example 2: Referential Equality
+```jsx
+// List component
+import { memo } from 'react';
+
+const List = memo(function List({ items }) {
+  // ...
+});
+
+export default function TodoList({ todos, tab, theme }) {
+  // ...
+  return (
+    <div className={theme}>
+      <List items={visibleTodos} />
+    </div>
+  );
+}
+
+
+```
+
+---
+
+## Correct Usage of useMemo
+### Example 3: Memo the dep of another hook
+```jsx
+function Dropdown({ allItems, text }) {
+  const searchOptions = useMemo(() => {
+    return { matchMode: 'whole-word', text };
+  }, [text]); // ✅ Only changes when text changes
+
+  const visibleItems = useMemo(() => {
+    return searchItems(allItems, searchOptions);
+    // ✅ Only changes when allItems or searchOptions changes
+  }, [allItems, searchOptions]);
+```
+---
+
+## Incorrect Usage of useMemo
+```jsx
+const MyComponent = ({ number }) => {
+  const double = useMemo(() => number * 2, [number]);
+  return ( /* Render logic... */ );
+};
+```
+- Unnecessary for simple computations or primitive values.
+---
+
+## Understanding useCallback
+- Memoizes a function, **useMemo for a function**
+
+--
+
+- Ideal for passing callbacks to child components.
+
+--
+
+- Use cases: Referential equality, performance-critical components.
+---
+
+## Correct Usage of useCallback
+```jsx
+export default function Page({ productId, referrer }) {
+  const handleSubmit = useMemo(() => {
+    return (orderDetails) => {
+      post('/product/' + productId + '/buy', {
+        referrer,
+        orderDetails
+      });
+    };
+  }, [productId, referrer]);
+
+  return <Form onSubmit={handleSubmit} />;
+}
+```
+---
+
+## Correct Usage of useCallback
+```jsx
+export default function Page({ productId, referrer }) {
+  const handleSubmit = useCallback((orderDetails) => {
+    post('/product/' + productId + '/buy', {
+      referrer,
+      orderDetails
+    });
+  }, [productId, referrer]);
+
+  return <Form onSubmit={handleSubmit} />;
+}
+```
+---
+## Troubleshooting useMemo/useCallback
+### My calculation runs twice on every re-render
+
+```jsx
+const visibleTodos = useMemo(() => {
+  // 🚩 Mistake: mutating a prop
+  todos.push({ id: 'last', text: 'Go for a walk!' });
+  const filtered = filterTodos(todos, tab);
+  return filtered;
+}, [todos, tab]);
+```
+---
+## Troubleshooting useMemo/useCallback
+### My calculation runs twice on every re-render
+
+```jsx
+const visibleTodos = useMemo(() => {
+  const filtered = filterTodos(todos, tab);
+  // ✅ Correct: mutating an object you created during the calculation
+  filtered.push({ id: 'last', text: 'Go for a walk!' });
+  return filtered;
+}, [todos, tab]);
+```
+---
+
+class: center, middle
+
+# Any questions?
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+    <script>
+      var slideshow = remark.create({
+        highlightStyle: "github",
+      });
+    </script>
+  </body>
+</html>
